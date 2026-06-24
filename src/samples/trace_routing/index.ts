@@ -12,12 +12,12 @@ import { traceGate } from './trace_middleware.js';
 
 // Dummy agent executor for the sample
 class TraceAgentExecutor implements AgentExecutor {
-  async execute(requestContext: any, eventBus: any): Promise<void> {
+  async execute(_requestContext: any, _eventBus: any): Promise<void> {
     // In a real agent, you would publish events to the eventBus
     return;
   }
 
-  async cancelTask(taskId: string, eventBus: any): Promise<void> {
+  async cancelTask(_taskId: string, _eventBus: any): Promise<void> {
     return;
   }
 }
@@ -57,11 +57,7 @@ async function main() {
   const taskStore: TaskStore = new InMemoryTaskStore();
   const agentExecutor: AgentExecutor = new TraceAgentExecutor();
 
-  const requestHandler = new DefaultRequestHandler(
-    traceAgentCard,
-    taskStore,
-    agentExecutor
-  );
+  const requestHandler = new DefaultRequestHandler(traceAgentCard, taskStore, agentExecutor);
 
   const app = express();
   app.use(express.json());
@@ -76,8 +72,12 @@ async function main() {
         const rawWallet = req.headers['x-agent-wallet'];
         const name = Array.isArray(rawWallet) ? rawWallet[0] : (rawWallet ?? 'anonymous');
         return {
-          get isAuthenticated() { return true; },
-          get userName() { return name; }
+          get isAuthenticated() {
+            return true;
+          },
+          get userName() {
+            return name;
+          },
         };
       },
     })
@@ -86,9 +86,7 @@ async function main() {
   const PORT = process.env.PORT || 41242;
   const server = app.listen(PORT, () => {
     console.log(`[TraceAgent] Server started on http://localhost:${PORT}`);
-    console.log(
-      `[TraceAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
-    );
+    console.log(`[TraceAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`);
     console.log('[TraceAgent] Press Ctrl+C to stop the server');
   });
 

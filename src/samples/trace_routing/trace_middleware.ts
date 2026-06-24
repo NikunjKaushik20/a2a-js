@@ -5,12 +5,12 @@
  * Checks agent trust score before processing payment.
  */
 
-const TRACE_API_URL = "https://api.trace.dev";
+const TRACE_API_URL = 'https://api.trace.dev';
 
 interface TraceScoreResult {
   provider_id: string;
   score: number;
-  routing_decision: "ROUTE" | "ROUTE_WITH_CAUTION" | "HOLD" | "INVESTIGATE";
+  routing_decision: 'ROUTE' | 'ROUTE_WITH_CAUTION' | 'HOLD' | 'INVESTIGATE';
   components: {
     lcb: number;
     default_risk: number;
@@ -55,38 +55,55 @@ export class TRACEMiddleware {
     let result: TraceScoreResult;
 
     // ─── MOCK MODE FOR SDK SAMPLES ─────────────────────────────────────────
-    if (this.apiKey.startsWith("sk_test_")) {
+    if (this.apiKey.startsWith('sk_test_')) {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      if (agentWallet === "honest_agent_wallet") {
+      if (agentWallet === 'honest_agent_wallet') {
         result = {
           provider_id: agentWallet,
           score: 0.95,
-          routing_decision: "ROUTE",
-          components: { lcb: 0.92, default_risk: 0.01, cost_norm: 0.5, trust_net: 0.95, cap_match: 1.0, sybil_risk: 0.0, clique_penalty: 0.0 },
+          routing_decision: 'ROUTE',
+          components: {
+            lcb: 0.92,
+            default_risk: 0.01,
+            cost_norm: 0.5,
+            trust_net: 0.95,
+            cap_match: 1.0,
+            sybil_risk: 0.0,
+            clique_penalty: 0.0,
+          },
           flags: [],
-          explanation: "Agent is highly trusted in the global TRACE graph.",
+          explanation: 'Agent is highly trusted in the global TRACE graph.',
           latency_ms: 300,
-          version: "1.0-mock",
+          version: '1.0-mock',
         };
       } else {
         result = {
           provider_id: agentWallet,
           score: 0.12,
-          routing_decision: "HOLD",
-          components: { lcb: 0.10, default_risk: 0.5, cost_norm: 0.5, trust_net: 0.12, cap_match: 1.0, sybil_risk: 0.88, clique_penalty: 0.75 },
-          flags: ["HIGH_SYBIL_RISK", "NEW_AGENT"],
-          explanation: "Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.",
+          routing_decision: 'HOLD',
+          components: {
+            lcb: 0.1,
+            default_risk: 0.5,
+            cost_norm: 0.5,
+            trust_net: 0.12,
+            cap_match: 1.0,
+            sybil_risk: 0.88,
+            clique_penalty: 0.75,
+          },
+          flags: ['HIGH_SYBIL_RISK', 'NEW_AGENT'],
+          explanation:
+            'Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.',
           latency_ms: 300,
-          version: "1.0-mock",
+          version: '1.0-mock',
         };
       }
     } else {
       // ───────────────────────────────────────────────────────────────────────
       const resp = await fetch(`${this.apiUrl}/v1/score`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": this.apiKey,
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
         },
         body: JSON.stringify({
           provider_id: agentWallet,
@@ -101,7 +118,7 @@ export class TRACEMiddleware {
       });
 
       if (!resp.ok) {
-        const error = new Error("TRACE API returned status " + resp.status);
+        const error = new Error('TRACE API returned status ' + resp.status);
         (error as any).status = 502;
         throw error;
       }
@@ -109,16 +126,13 @@ export class TRACEMiddleware {
       result = await resp.json();
     }
 
-    if (
-      result.routing_decision === "HOLD" ||
-      result.routing_decision === "INVESTIGATE"
-    ) {
+    if (result.routing_decision === 'HOLD' || result.routing_decision === 'INVESTIGATE') {
       const error = new Error(
         `Agent trust score ${result.score.toFixed(2)} below threshold ${this.minScore}`
       );
       (error as any).status = 402;
       (error as any).details = {
-        error: "agent_untrusted",
+        error: 'agent_untrusted',
         score: result.score,
         flags: result.flags,
       };
@@ -140,17 +154,17 @@ export function traceGate(options: TRACEMiddlewareOptions) {
   const trace = new TRACEMiddleware(options);
 
   return async (req: any, res: any, next: any) => {
-    const rawWallet = req.headers["x-payment-sender"] || req.headers["x-agent-wallet"];
+    const rawWallet = req.headers['x-payment-sender'] || req.headers['x-agent-wallet'];
     const agentWallet = Array.isArray(rawWallet) ? rawWallet[0] : rawWallet;
 
     if (!agentWallet) {
       return res.status(400).json({
-        error: "missing_wallet_header",
-        message: "x-payment-sender or x-agent-wallet header is required."
+        error: 'missing_wallet_header',
+        message: 'x-payment-sender or x-agent-wallet header is required.',
       });
     }
 
-    const capability = req.body?.capability ?? "default";
+    const capability = req.body?.capability ?? 'default';
     const price = req.body?.price_usdc ?? 0.01;
 
     try {
@@ -159,7 +173,7 @@ export function traceGate(options: TRACEMiddlewareOptions) {
       next();
     } catch (err: any) {
       res.status(err.status || 402).json({
-        error: err.details?.error || "gateway_error",
+        error: err.details?.error || 'gateway_error',
         score: err.details?.score,
         flags: err.details?.flags,
         message: err.message,
