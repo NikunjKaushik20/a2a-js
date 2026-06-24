@@ -99,6 +99,13 @@ export class TRACEMiddleware {
         }),
         signal: AbortSignal.timeout(5000),
       });
+
+      if (!resp.ok) {
+        const error = new Error("TRACE API returned status " + resp.status);
+        (error as any).status = 502;
+        throw error;
+      }
+
       result = await resp.json();
     }
 
@@ -126,21 +133,25 @@ export class TRACEMiddleware {
  * Express middleware factory.
  *
  * Usage:
- *   import { traceGate } from "./x402_middleware";
- *   app.use("/agent", traceGate({ apiKey: "sk_trace_..." }));
+ *   import { traceGate } from "./trace_middleware.js";
+ *   app.use(traceGate({ apiKey: "sk_trace_..." }));
  */
 export function traceGate(options: TRACEMiddlewareOptions) {
   const trace = new TRACEMiddleware(options);
 
   return async (req: any, res: any, next: any) => {
-    const agentWallet =
-      req.headers["x-payment-sender"] || req.headers["x-agent-wallet"];
-    const capability = req.body?.capability ?? "default";
-    const price = req.body?.price_usdc ?? 0.01;
+    const rawWallet = req.headers["x-payment-sender"] || req.headers["x-agent-wallet"];
+    const agentWallet = Array.isArray(rawWallet) ? rawWallet[0] : rawWallet;
 
     if (!agentWallet) {
-      return next(); // No wallet header — skip trust check
+      return res.status(400).json({
+        error: "missing_wallet_header",
+        message: "x-payment-sender or x-agent-wallet header is required."
+      });
     }
+
+    const capability = req.body?.capability ?? "default";
+    const price = req.body?.price_usdc ?? 0.01;
 
     try {
       const result = await trace.check(agentWallet, capability, price);
@@ -148,7 +159,7 @@ export function traceGate(options: TRACEMiddlewareOptions) {
       next();
     } catch (err: any) {
       res.status(err.status || 402).json({
-        error: "agent_untrusted",
+        error: err.details?.error || "gateway_error",
         score: err.details?.score,
         flags: err.details?.flags,
         message: err.message,

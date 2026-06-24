@@ -5,17 +5,20 @@ import {
   TaskStore,
   AgentExecutor,
   DefaultRequestHandler,
+  User,
 } from '../../server/index.js';
 import { jsonRpcHandler } from '../../server/express/index.js';
 import { traceGate } from './trace_middleware.js';
 
 // Dummy agent executor for the sample
 class TraceAgentExecutor implements AgentExecutor {
-  async executeTask(task: any) {
-    return {
-      status: 'completed',
-      result: 'Task executed securely after passing TRACE trust gate!',
-    };
+  async execute(requestContext: any, eventBus: any): Promise<void> {
+    // In a real agent, you would publish events to the eventBus
+    return;
+  }
+
+  async cancelTask(taskId: string, eventBus: any): Promise<void> {
+    return;
   }
 }
 
@@ -69,18 +72,28 @@ async function main() {
   app.use(
     jsonRpcHandler({
       requestHandler,
-      userBuilder: async (req) => { return { id: req.headers["x-agent-wallet"] || "anonymous" } }
+      userBuilder: async (req): Promise<User> => {
+        const rawWallet = req.headers['x-agent-wallet'];
+        const name = Array.isArray(rawWallet) ? rawWallet[0] : (rawWallet ?? 'anonymous');
+        return {
+          get isAuthenticated() { return true; },
+          get userName() { return name; }
+        };
+      },
     })
   );
 
   const PORT = process.env.PORT || 41242;
-  app.listen(PORT, (err: unknown) => {
-    if (err) throw err;
+  const server = app.listen(PORT, () => {
     console.log(`[TraceAgent] Server started on http://localhost:${PORT}`);
     console.log(
       `[TraceAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
     );
     console.log('[TraceAgent] Press Ctrl+C to stop the server');
+  });
+
+  server.on('error', (err) => {
+    console.error('[TraceAgent] Failed to start server:', err);
   });
 }
 
