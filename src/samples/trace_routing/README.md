@@ -8,7 +8,7 @@ The A2A protocol allows any agent to dynamically discover and delegate tasks to 
 Legacy reputation systems (like EigenTrust or simple rating averages) are highly susceptible to being gamed by coordinated Sybil clusters during the stealth phase. 
 
 ## The Solution: TRACE
-TRACE is a high-performance, graph-aware trust scoring API designed specifically for A2A marketplaces. It uses Personalized PageRank combined with Bayesian Lower Confidence Bounds to establish Sybil-resistant trust scores.
+TRACE is a high-performance, graph-aware trust scoring API designed specifically for A2A marketplaces. It uses Personalized PageRank combined with Bayesian Lower Confidence Bounds to establish Sybil-resistant trust scores. See more at the [TRACE Trust API](https://trace-api-sigma.vercel.app).
 
 By wrapping your A2A endpoints with the TRACE middleware, your agent will autonomously reject incoming task requests from untrusted or malicious peers.
 

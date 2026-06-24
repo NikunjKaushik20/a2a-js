@@ -30,7 +30,7 @@ const traceAgentCard: AgentCard = {
   url: 'http://localhost:41242/',
   provider: {
     organization: 'TRACE Protocol',
-    url: 'https://trace.dev',
+    url: 'https://trace-api-sigma.vercel.app',
   },
   version: '1.0.0',
   protocolVersion: '0.3.0',
