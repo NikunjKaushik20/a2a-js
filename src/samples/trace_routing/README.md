@@ -12,6 +12,9 @@ TRACE is a high-performance, graph-aware trust scoring API designed specifically
 
 By wrapping your A2A endpoints with the TRACE middleware, your agent will autonomously reject incoming task requests from untrusted or malicious peers.
 
+### ⚠️ Current Limitations (The "Anchor Gap")
+While this middleware natively emits deterministic freshness semantics (`refresh_hint` block) using declared inputs (`evaluated_job_count`, `evaluated_edge_density`), **these inputs are currently declared by the producer and not yet externally anchored**. Recomputation of the freshness window is deterministic given the inputs, but independent verification of those inputs against public topology state is an area of future work.
+
 ## How to Run
 
 1. **Install dependencies:**
