@@ -10,7 +10,14 @@ const TRACE_API_URL = 'https://api.trace.dev';
 interface TraceScoreResult {
   provider_id: string;
   score: number;
-  routing_decision: 'ROUTE' | 'ROUTE_WITH_CAUTION' | 'HOLD' | 'INVESTIGATE' | 'QUARANTINE' | 'DENY' | 'REFER';
+  routing_decision:
+    | 'ROUTE'
+    | 'ROUTE_WITH_CAUTION'
+    | 'HOLD'
+    | 'INVESTIGATE'
+    | 'QUARANTINE'
+    | 'DENY'
+    | 'REFER';
   components: {
     lcb: number;
     default_risk: number;
@@ -84,7 +91,7 @@ export class TRACEMiddleware {
             temporal_soft_ttl: 3600,
             temporal_hard_floor: 86400,
             evaluated_job_count: 300,
-            evaluated_edge_density: 0.0185
+            evaluated_edge_density: 0.0185,
           },
           evidence_source_count: 5,
           flags: [],
@@ -102,7 +109,7 @@ export class TRACEMiddleware {
             lcb: 0.95,
             default_risk: 0.5,
             cost_norm: 0.5,
-            trust_net: 0.90,
+            trust_net: 0.9,
             cap_match: 1.0,
             sybil_risk: 0.8,
             clique_penalty: 0.9,
@@ -112,11 +119,12 @@ export class TRACEMiddleware {
             temporal_soft_ttl: 1800,
             temporal_hard_floor: 43200,
             evaluated_job_count: 0,
-            evaluated_edge_density: 0.05
+            evaluated_edge_density: 0.05,
           },
           evidence_source_count: 1,
           flags: ['COLLUSION_RING_SUSPECTED', 'HIGH_CLIQUE_PENALTY'],
-          explanation: 'Structural score is high but behavioral history is zero in a dense graph. High risk of premature lock-in on an adversarial cluster.',
+          explanation:
+            'Structural score is high but behavioral history is zero in a dense graph. High risk of premature lock-in on an adversarial cluster.',
           latency_ms: 300,
           version: '1.0-mock',
         };
@@ -140,11 +148,12 @@ export class TRACEMiddleware {
             temporal_soft_ttl: 600,
             temporal_hard_floor: 3600,
             evaluated_job_count: 50,
-            evaluated_edge_density: 0.02
+            evaluated_edge_density: 0.02,
           },
           evidence_source_count: 3,
           flags: ['SYBIL_ANOMALY', 'EDGE_TO_JOB_RATIO_EXCEEDED'],
-          explanation: 'Sybil edge-to-job anomaly detected. Triggering quarantine regardless of node-level reputation.',
+          explanation:
+            'Sybil edge-to-job anomaly detected. Triggering quarantine regardless of node-level reputation.',
           latency_ms: 300,
           version: '1.0-mock',
         };
@@ -168,11 +177,12 @@ export class TRACEMiddleware {
             temporal_soft_ttl: 900,
             temporal_hard_floor: 7200,
             evaluated_job_count: 60,
-            evaluated_edge_density: 0.005
+            evaluated_edge_density: 0.005,
           },
           evidence_source_count: 1, // Indicates fragmentation
           flags: ['FRAGMENTED_VISIBILITY'],
-          explanation: 'Fragmented buyer-local histories. Require broader evidence aggregation or lower authority scope.',
+          explanation:
+            'Fragmented buyer-local histories. Require broader evidence aggregation or lower authority scope.',
           latency_ms: 300,
           version: '1.0-mock',
         };
@@ -195,11 +205,12 @@ export class TRACEMiddleware {
             temporal_soft_ttl: 3600,
             temporal_hard_floor: 86400,
             evaluated_job_count: 120,
-            evaluated_edge_density: 0.012
+            evaluated_edge_density: 0.012,
           },
           evidence_source_count: 2,
           flags: ['HIGH_SYBIL_RISK', 'NEW_AGENT'],
-          explanation: 'Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.',
+          explanation:
+            'Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.',
           latency_ms: 300,
           version: '1.0-mock',
         };
