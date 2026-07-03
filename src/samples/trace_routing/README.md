@@ -45,3 +45,30 @@ By wrapping your A2A endpoints with the TRACE middleware, your agent will autono
      -d '{"jsonrpc": "2.0", "method": "execute", "params": {}}'
    ```
    *(Returns HTTP 402 Payment Required: The TRACE graph detected high Sybil risk and the middleware automatically blocked the request).*
+
+   **Simulate Vector 2 (Dense pre-existing edges + high LCB + no behavioral history):**
+   ```bash
+   curl -X POST http://localhost:41242/ \
+     -H "Content-Type: application/json" \
+     -H "x-agent-wallet: vector_2_dense_no_history" \
+     -d '{"jsonrpc": "2.0", "method": "execute", "params": {}}'
+   ```
+   *(Returns HTTP 402 Payment Required: Structural score is high but behavioral history is zero in a dense graph. QUARANTINE decision).*
+
+   **Simulate Vector 3 (Sybil edge-to-job anomaly detected):**
+   ```bash
+   curl -X POST http://localhost:41242/ \
+     -H "Content-Type: application/json" \
+     -H "x-agent-wallet: vector_3_sybil_anomaly" \
+     -d '{"jsonrpc": "2.0", "method": "execute", "params": {}}'
+   ```
+   *(Returns HTTP 402 Payment Required: Sybil edge-to-job anomaly detected. QUARANTINE decision).*
+
+   **Simulate Vector 4 (Fragmented evidence_bundle):**
+   ```bash
+   curl -X POST http://localhost:41242/ \
+     -H "Content-Type: application/json" \
+     -H "x-agent-wallet: vector_4_fragmented_visibility" \
+     -d '{"jsonrpc": "2.0", "method": "execute", "params": {}}'
+   ```
+   *(Returns HTTP 402 Payment Required: Fragmented buyer-local histories. REFER decision).*

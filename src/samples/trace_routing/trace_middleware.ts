@@ -10,7 +10,7 @@ const TRACE_API_URL = 'https://api.trace.dev';
 interface TraceScoreResult {
   provider_id: string;
   score: number;
-  routing_decision: 'ROUTE' | 'ROUTE_WITH_CAUTION' | 'HOLD' | 'INVESTIGATE';
+  routing_decision: 'ROUTE' | 'ROUTE_WITH_CAUTION' | 'HOLD' | 'INVESTIGATE' | 'QUARANTINE' | 'DENY' | 'REFER';
   components: {
     lcb: number;
     default_risk: number;
@@ -20,6 +20,14 @@ interface TraceScoreResult {
     sybil_risk: number;
     clique_penalty: number;
   };
+  refresh_hint?: {
+    strategy: string;
+    temporal_soft_ttl: number;
+    temporal_hard_floor: number;
+    evaluated_job_count: number;
+    evaluated_edge_density: number;
+  };
+  evidence_source_count?: number;
   flags: string[];
   explanation: string;
   latency_ms: number;
@@ -71,8 +79,100 @@ export class TRACEMiddleware {
             sybil_risk: 0.0,
             clique_penalty: 0.0,
           },
+          refresh_hint: {
+            strategy: 'volume_decay',
+            temporal_soft_ttl: 3600,
+            temporal_hard_floor: 86400,
+            evaluated_job_count: 300,
+            evaluated_edge_density: 0.0185
+          },
+          evidence_source_count: 5,
           flags: [],
           explanation: 'Agent is highly trusted in the global TRACE graph.',
+          latency_ms: 300,
+          version: '1.0-mock',
+        };
+      } else if (agentWallet === 'vector_2_dense_no_history') {
+        // Vector 2: Dense pre-existing edges + high LCB + no behavioral history
+        result = {
+          provider_id: agentWallet,
+          score: 0.15,
+          routing_decision: 'QUARANTINE',
+          components: {
+            lcb: 0.95,
+            default_risk: 0.5,
+            cost_norm: 0.5,
+            trust_net: 0.90,
+            cap_match: 1.0,
+            sybil_risk: 0.8,
+            clique_penalty: 0.9,
+          },
+          refresh_hint: {
+            strategy: 'volume_decay',
+            temporal_soft_ttl: 1800,
+            temporal_hard_floor: 43200,
+            evaluated_job_count: 0,
+            evaluated_edge_density: 0.05
+          },
+          evidence_source_count: 1,
+          flags: ['COLLUSION_RING_SUSPECTED', 'HIGH_CLIQUE_PENALTY'],
+          explanation: 'Structural score is high but behavioral history is zero in a dense graph. High risk of premature lock-in on an adversarial cluster.',
+          latency_ms: 300,
+          version: '1.0-mock',
+        };
+      } else if (agentWallet === 'vector_3_sybil_anomaly') {
+        // Vector 3: Sybil edge-to-job anomaly detected
+        result = {
+          provider_id: agentWallet,
+          score: 0.05,
+          routing_decision: 'QUARANTINE',
+          components: {
+            lcb: 0.2,
+            default_risk: 0.8,
+            cost_norm: 0.5,
+            trust_net: 0.1,
+            cap_match: 1.0,
+            sybil_risk: 0.98,
+            clique_penalty: 0.5,
+          },
+          refresh_hint: {
+            strategy: 'volume_decay',
+            temporal_soft_ttl: 600,
+            temporal_hard_floor: 3600,
+            evaluated_job_count: 50,
+            evaluated_edge_density: 0.02
+          },
+          evidence_source_count: 3,
+          flags: ['SYBIL_ANOMALY', 'EDGE_TO_JOB_RATIO_EXCEEDED'],
+          explanation: 'Sybil edge-to-job anomaly detected. Triggering quarantine regardless of node-level reputation.',
+          latency_ms: 300,
+          version: '1.0-mock',
+        };
+      } else if (agentWallet === 'vector_4_fragmented_visibility') {
+        // Vector 4: Fragmented evidence_bundle
+        result = {
+          provider_id: agentWallet,
+          score: 0.45,
+          routing_decision: 'REFER',
+          components: {
+            lcb: 0.8,
+            default_risk: 0.1,
+            cost_norm: 0.5,
+            trust_net: 0.8,
+            cap_match: 1.0,
+            sybil_risk: 0.1,
+            clique_penalty: 0.1,
+          },
+          refresh_hint: {
+            strategy: 'volume_decay',
+            temporal_soft_ttl: 900,
+            temporal_hard_floor: 7200,
+            evaluated_job_count: 60,
+            evaluated_edge_density: 0.005
+          },
+          evidence_source_count: 1, // Indicates fragmentation
+          flags: ['FRAGMENTED_VISIBILITY'],
+          explanation: 'Fragmented buyer-local histories. Require broader evidence aggregation or lower authority scope.',
           latency_ms: 300,
           version: '1.0-mock',
         };
@@ -90,9 +190,16 @@ export class TRACEMiddleware {
             sybil_risk: 0.88,
             clique_penalty: 0.75,
           },
+          refresh_hint: {
+            strategy: 'volume_decay',
+            temporal_soft_ttl: 3600,
+            temporal_hard_floor: 86400,
+            evaluated_job_count: 120,
+            evaluated_edge_density: 0.012
+          },
+          evidence_source_count: 2,
           flags: ['HIGH_SYBIL_RISK', 'NEW_AGENT'],
-          explanation:
-            'Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.',
+          explanation: 'Agent lacks sufficient inbound trust edges and exhibits Sybil-like clustering.',
           latency_ms: 300,
           version: '1.0-mock',
         };
@@ -126,7 +233,7 @@ export class TRACEMiddleware {
       result = await resp.json();
     }
 
-    if (result.routing_decision === 'HOLD' || result.routing_decision === 'INVESTIGATE') {
+    if (['HOLD', 'INVESTIGATE', 'QUARANTINE', 'DENY', 'REFER'].includes(result.routing_decision)) {
       const error = new Error(
         `Agent trust score ${result.score.toFixed(2)} below threshold ${this.minScore}`
       );
