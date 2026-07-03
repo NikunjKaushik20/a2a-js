@@ -33,6 +33,7 @@ interface TraceScoreResult {
     temporal_hard_floor: number;
     evaluated_job_count: number;
     evaluated_edge_density: number;
+    evaluated_record_refs: string[];
   };
   evidence_source_count?: number;
   flags: string[];
@@ -92,6 +93,7 @@ export class TRACEMiddleware {
             temporal_hard_floor: 86400,
             evaluated_job_count: 300,
             evaluated_edge_density: 0.0185,
+            evaluated_record_refs: ['job_tx_001', 'job_tx_002', 'job_tx_003'], // Truncated for mock
           },
           evidence_source_count: 5,
           flags: [],
@@ -120,6 +122,7 @@ export class TRACEMiddleware {
             temporal_hard_floor: 43200,
             evaluated_job_count: 0,
             evaluated_edge_density: 0.05,
+            evaluated_record_refs: [],
           },
           evidence_source_count: 1,
           flags: ['COLLUSION_RING_SUSPECTED', 'HIGH_CLIQUE_PENALTY'],
@@ -149,6 +152,7 @@ export class TRACEMiddleware {
             temporal_hard_floor: 3600,
             evaluated_job_count: 50,
             evaluated_edge_density: 0.02,
+            evaluated_record_refs: ['job_tx_sybil_01', 'job_tx_sybil_02'], // Truncated for mock
           },
           evidence_source_count: 3,
           flags: ['SYBIL_ANOMALY', 'EDGE_TO_JOB_RATIO_EXCEEDED'],
@@ -178,6 +182,7 @@ export class TRACEMiddleware {
             temporal_hard_floor: 7200,
             evaluated_job_count: 60,
             evaluated_edge_density: 0.005,
+            evaluated_record_refs: ['job_tx_frag_01'], // Truncated for mock
           },
           evidence_source_count: 1, // Indicates fragmentation
           flags: ['FRAGMENTED_VISIBILITY'],
@@ -206,6 +211,7 @@ export class TRACEMiddleware {
             temporal_hard_floor: 86400,
             evaluated_job_count: 120,
             evaluated_edge_density: 0.012,
+            evaluated_record_refs: ['job_tx_untrusted_01'], // Truncated for mock
           },
           evidence_source_count: 2,
           flags: ['HIGH_SYBIL_RISK', 'NEW_AGENT'],
